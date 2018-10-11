@@ -1,27 +1,35 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
-import { createStore, applyMiddleware } from 'redux';
-import { BrowserRouter, Route, Switch } from 'react-router-dom';
-import ReduxPromise from 'redux-promise';
+import { BrowserRouter } from 'react-router-dom';
+import { applyMiddleware, createStore, compose } from 'redux'
+import { createLogger } from 'redux-logger'
 
 import reducers from './reducers';
-import PostsIndex from './components/posts-index';
-import PostsNew from './components/posts-new';
-import PostsShow from './components/posts-show';
+import App from './components/app';
+import thunker from 'redux-thunk';
 
-const createStoreWithMiddleware = applyMiddleware(ReduxPromise)(createStore);
+/* eslint-disable */
+const composeEnhancers = typeof __REDUX_DEVTOOLS_EXTENSION_COMPOSE__ === 'function' && __REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose
+/* eslint-enable */
+
+const middlewares = []
+
+middlewares.push(thunker);
+if (process.env.NODE_ENV !== 'production') middlewares.push(createLogger({ level: 'info' }))
+
+
+const store = createStore(
+  reducers,
+  composeEnhancers(
+    applyMiddleware(...middlewares)
+  )
+)
 
 ReactDOM.render(
-  <Provider store={createStoreWithMiddleware(reducers)}>
+  <Provider store={store}>
     <BrowserRouter>
-      <div>
-        <Switch>
-          <Route path="/posts/new" component={PostsNew} />
-          <Route path="/posts/:id" component={PostsShow} />
-          <Route path="/" component={PostsIndex} />
-        </Switch>
-      </div>
+      <App />
     </BrowserRouter>
   </Provider>
   , document.querySelector('.container'));

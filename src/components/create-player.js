@@ -3,14 +3,13 @@ import { Field, reduxForm } from 'redux-form';
 import { Link } from 'react-router-dom';
 
 import { connect } from 'react-redux';
-import { createPost } from '../actions';
+import { createPlayer } from '../actions/players';
 
-class PostsNew extends Component {
+class CreatePlayer extends Component {
 
   renderField(field) {
 
     const { meta: { touched, error } } = field;
-    // field.meta.touched, field.meta.error => es6 way
 
     const className = `form-group ${touched && error ? 'has-danger' : ''}`;
 
@@ -33,9 +32,17 @@ class PostsNew extends Component {
   }
 
   onSubmit(values) {
-    this.props.createPost(values, () => {
-      this.props.history.push('/');
-    });
+    this.props.createPlayer(values);
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if (this.props.creatingPlayer && !nextProps.creatingPlayer) {
+      if (nextProps.creatingPlayerSuccess) {
+        this.props.history.push('/');
+      } else if (nextProps.creatingPlayerError){
+        console.log('ERROR: ', nextProps.creatingPlayerError)
+      }
+    }
   }
 
   render() {
@@ -43,21 +50,29 @@ class PostsNew extends Component {
 
     return (
       <form onSubmit={handleSubmit(this.onSubmit.bind(this))}>
+        <div>
         <Field 
-          label="Title"
+          label="Name"
           name="title"
           component={this.renderField}
         />
+        </div>
+        <div>
+        <label htmlFor="isActive">isActive</label>
+        <Field
+            name="isActive"
+            id="isActive"
+            component="input"
+            type="checkbox"
+          />
+        </div>
+        <div>
         <Field 
-          label="Categories"
-          name="categories"
+          label="Points"
+          name="points"
           component={this.renderField}
         />
-        <Field 
-          label="Content"
-          name="content"
-          component={this.renderField}
-        />
+        </div>
         <button type="submit" className="btn btn-primary">Submit</button>
         <Link to="/" className="btn btn-danger">Cancel</Link>
       </form>
@@ -68,25 +83,22 @@ class PostsNew extends Component {
 function validate(values) {
   const errors = {};
 
-  if(!values.title) {
-    errors.title = 'Enter a title!';
-  }
-
-  if(!values.categories) {
-    errors.categories = 'Enter some categories';
-  }
-
-  if(!values.content) {
-    errors.content = 'Enter some content please';
+  if(values.points < 0 || !Number.isInteger(Number(values.points))) {
+    errors.points = 'Points must be positive integer!';
   }
 
   // if errors is empty object, the form is fine to submit
   return errors;
 }
+const mapToStateToProps = state => ({
+  creatingPlayer: state.players.creatingPlayer,
+  creatingPlayerSuccess: state.players.creatingPlayerSuccess,
+  creatingPlayerError: state.players.creatingPlayerError,
+})
 
 export default reduxForm({
-  validate, //validate: validate
-  form: 'PostsNewForm'
+  validate: validate,
+  form: 'CreatePlayer'
 })(
-  connect(null, { createPost }) (PostsNew)
+  connect(mapToStateToProps, { createPlayer }) (CreatePlayer)
 );
